@@ -1,0 +1,599 @@
+---
+title: "Jeetscase2"
+author: "Ben"
+date: "May 5, 2018"
+output: html_document
+---
+
+```{r}
+
+setwd("C:/Users/Meow/Documents/Bootcamp/PeopleAnalytics")
+
+
+library(readxl)
+
+PeopleAnalyticsA <- read_excel("~/Bootcamp/PeopleAnalytics/PeopleAnalyticsA.xlsx")
+
+PeopleAnalytica = data.frame(PeopleAnalyticsA)
+
+
+
+```
+
+
+
+
+```{r}
+
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(caret)
+library(glmnet)
+
+
+library(gridExtra)
+library(tabplot)
+library(lsr)
+library(corrplot)
+library("ROCR")
+
+```
+
+
+
+```{r}
+
+apply(PeopleAnalyticsA, 2, function(x) any(is.na(x)))
+
+
+PeopleAnalytica[117, 3] = "No"
+
+PeopleAnalytica[3, 21 ] = "7"
+
+PeopleAnalytica[128, 21 ] = "8"
+
+
+
+
+
+
+```
+
+
+
+
+```{r}
+
+
+PeopleAnalytica$motivation <- as.numeric(PeopleAnalytica$motivation)
+
+
+People = data.frame(PeopleAnalytica)
+
+People$motivation[is.na(People$motivation)] = mean(People$motivation, na.rm=TRUE)
+
+People$Learning.Aptitude[is.na(People$Learning.Aptitude)] = mean(People$Learning.Aptitude, na.rm=TRUE)
+
+People$Learning.Aptitude[is.na(People$Num..of.tries.before.passing.Series.7)] = median(People$Num..of.tries.before.passing.Series.7, na.rm=TRUE)
+
+sapply(People, function(x) sum(is.na(x)))
+
+
+```
+
+
+
+```{r}
+
+People1 = data.frame(People)
+
+
+People1$GenderN = ifelse(People$Gender == 'M', 0, 
+                  ifelse(People$Gender== 'F', 1, 2))
+
+
+People1$AccreditedN  = ifelse(People$Accredited. == 'No', 0, 
+                       ifelse(People$Accredited. == 'Yes', 1, 2))
+
+
+People1$FinanceMathN =  ifelse(People$Finance...Math.major == 'N', 0,
+                          ifelse(People$Finance...Math.major == 'y',1,
+                               ifelse(People1$Finance...Math.major == 'Y', 1,2)))
+
+People1$Previously.employedN = ifelse(People1$Previously.employed.at.Vanguard == 'N', 0,                                      
+                                     ifelse(People1$Previously.employed.at.Vanguard == 'Y', 1, 2))
+
+
+People1$US.CitizenN = ifelse(People1$US.Citizen. == 'N', 0,                                      
+                          ifelse(People1$US.Citizen. == 'Y', 1,
+                                  ifelse(People1$US.Citizen == 'y' ,1 , 2)))
+
+
+People1$Internal.ReferralN= ifelse(People1$Internal.Referral == 'N', 0,                                      
+                               ifelse(People1$Internal.Referral == 'Y', 1,                              
+                                 ifelse(People1$Internal.Referral == 'y', 1, 2)))
+     
+
+                        
+People1$Career.FairN = ifelse(People1$Career.Fair == 'N', 0,                                      
+                              ifelse(People1$Career.Fair == 'Y', 1, 
+                                     ifelse(People$Career.Fair =='y', 1, 2)))  
+                             
+People1$External.RecruiterN = ifelse(People$External.Recruiter == 'N', 0,
+                                ifelse(People1$External.Recruiter == 'Y', 1,
+                                  ifelse(People$External.Recruiter==  'y', 1, 2)))
+
+                                
+People1$Training.RatingN = ifelse(People$Training.Rating == 'Low',0,
+                                  ifelse(People$Training.Rating == 'Medium', 1,
+                                         ifelse(People$Training.Rating == 'High', 2, 3)))   
+
+
+
+People1$SchoolN = ifelse(People$School == 'Arizona State University',0,
+                                  ifelse(People$School == 'Drexel University', 1,
+                                         ifelse(People$School == 'Florida State University',2,    
+                                              ifelse(People1$School == 'Penn State',3, 
+                                                ifelse(People$School == 'Penn State University' ,3,
+                                                  ifelse(People$School == 'Strayer Univeristy' ,4,
+                                                    ifelse(People$School == "St.Joseph's University" ,9,
+                                                      ifelse(People$School == "St. Josephs University",9,
+                                                        ifelse(People$School == "St. Joseph's Univ",9,
+                                                           ifelse(People$School == "St. Joseph's Univ.",9,
+                                                              ifelse(People$School == 'Strayer University',6,
+                                                                ifelse(People$School == 'University of Phoenix',7,
+                                                                  ifelse(People$School == 'University of Phenix', 7 ,
+                                                                    ifelse(People$School == "Villanova University",8, 9))))))))))))))
+                                                                   
+
+People1$Hiring.SiteN = ifelse(People$Hiring.Site == 'AZ',0,
+                          ifelse(People$Hiring.Site == 'NC', 1,
+                           ifelse(People1$Hiring.Site== 'PA', 2, 3)))   
+
+
+People1$RecruiterN = ifelse(People$Recruiter == 'AL',0,
+                      ifelse(People$Recruiter ==  'DE', 1,
+                           ifelse(People$Recruiter == 'DT', 2,  
+                                  ifelse(People$Recruiter == 'GJ',3, 
+                                         ifelse(People$Recruiter == 'OK' ,4,
+                                                ifelse(People$Recruiter== 'GG' ,5,
+                                                       ifelse(People$Recruiter == "ER" ,6,
+                                                           ifelse(People$Recruiter== "TR",7,
+                                                                     ifelse(People$Recruiter== "LK",8,
+                                                                            ifelse(People$R == "PL",9, 10))))))))))
+
+People1$Campus.RecruitingN = ifelse(People$Campus..Recruiting == 'N',0,
+                                    ifelse(People$Campus..Recruiting == 'Y', 1,
+                                           ifelse(People$Campus..Recruiting== 'y', 1, 2)))  
+
+
+
+
+
+```
+
+
+
+
+```{r}
+
+
+People3 = People1
+
+
+People3$External.Cost = ifelse(People3$External.RecruiterN == '0', 0,
+                        ifelse(People3$External.RecruiterN ==  '1', 5000, 0))
+                              
+
+People3$Career.FairCost = ifelse(People3$Career.FairN == '0', 0,  
+                          ifelse(People3$Career.FairN == '1',500,0)) 
+                                      
+                           
+People3$Campus.Recruiting.Cost = ifelse(People3$Campus.RecruitingN == '0' ,0,                         
+                                  ifelse(People1$Campus.RecruitingN== '1',3000,0))
+
+
+
+
+```
+
+
+
+
+```{r}
+
+People4 = People3
+
+
+
+People4$TotalCost <- paste0(People4$External.Cost,People4$Career.FairCost, People4$Campus.Recruiting.Cost)
+
+
+
+People4$TotalCost = ifelse(People4$TotalCost == '000' ,1000,                         
+                                ifelse(People4$TotalCost == '003000', 3000, 
+                                  ifelse(People4$TotalCost == '05000', 500,
+                                   ifelse(People4$TotalCost == '500000', 5000, 0))))
+
+
+
+People4$US.CitizenN = ifelse(People4$US.Citizen. == 'N' ,0,                         
+                           ifelse(People4$US.Citizen. == 'Y', 1, 2))
+
+
+People4$AccreditedN = ifelse(People4$Accredited. == 'No' ,0,                         
+                           ifelse(People4$Accredited. == 'Yes', 1, 2))
+
+
+
+
+```
+
+
+```{r}
+
+People4$TotalRecruitingCost = People4$TotalCost
+
+
+
+
+People4[183, 40] =  "5500"
+People4[105, 40] = "3500"
+People4[62, 40] = "3500"
+
+
+People4$TotalCost = NULL
+
+People4$TotalTrainingCost = ifelse(People4$Num..of.tries.before.passing.Series.7 == '1', 1500,
+                              ifelse(People4$Num..of.tries.before.passing.Series.7 == '2', 3000,
+                                ifelse(People4$Num..of.tries.before.passing.Series.7 == '3', 4500, 0)))
+          
+
+
+
+
+
+People4[,39] <- as.numeric(as.character(People4[,39]))
+
+People4[,40] <- as.numeric(as.character(People4[,40]))
+
+
+People4$TotalCost = People4$TotalTrainingCost + People4$TotalRecruitingCost
+
+
+
+
+```
+
+
+```{r}
+
+People5 = cbind(People4$Years.in.Fin.Svcs, People4$Age, People4$FINRA.Series.7.test.score, People4$Num..of.tries.before.passing.Series.7, 
+                People4$Learning.Aptitude, People4$motivation, People4$Training.practice.test.score, People4$GenderN,
+                People4$Training.RatingN,People4$FinanceMathN,People4$Previously.employedN, People4$Internal.ReferralN, 
+                People4$Campus.RecruitingN,People4$External.RecruiterN, People4$Career.FairN, People4$TotalTrainingCost,People4$TotalRecruitingCost,
+                People4$TotalCost,People4$Hiring.SiteN, People4$RecruiterN, People4$College.GPA, People4$SchoolN, People4$US.CitizenN, 
+                People4$AccreditedN)
+      
+            
+
+People6 = data.frame(People5)
+
+
+
+
+names(People6) <- c("Years.in.Fin", "Age", "Test.Score", "Number.Tries","Learning Aptitude", "Motivation", "Training.Practice", 
+                    "Gender", "Train.RatingN", "Finance.Math", "Previously.Employed","Internal.Referral",
+                    "Campus.Recruiting","External Recruiting","Career.Fair.Recruiting", "Total.Training.Cost", "Total.Recruiting.Cost","Total.Cost",
+                    "Hiring Site", "The.Recruiter", "College.GPA", "School.Type","Citizen", "Accredited")
+               
+View(People6)
+
+
+
+```
+
+
+
+```{r}
+
+
+People7 = People6
+
+People7 = cbind(People6, People4$Training.practice.test.score)
+
+colnames(People7)[colnames(People7)=="People4$Training.practice.test.score"] <- "People7$Training.Practice"
+
+
+
+People6$`People7$Training.Practice` = NULL
+
+
+People6 = People7
+
+People6$Internal.ReferralN = NULL
+
+People6$Training.Practice = NULL
+
+
+View(People6)
+
+
+
+```
+
+
+```{r}
+
+People6$`Learning Aptitude` = as.ordered(People6$`Learning Aptitude`)
+People6$`Motivation` = as.ordered(People6$`Motivation`)
+People6$Train.RatingN = as.ordered(People6$Train.RatingN)
+
+People6$Previously.Employed = as.factor(People6$Previously.Employed)
+People6$Finance.Math = as.factor(People7$Finance.Math)
+People6$Gender = as.factor(People6$Gender)
+People6$Internal.Referral =as.factor(People6$Internal.Referral)
+People6$Campus.Recruiting = as.factor(People6$Campus.Recruiting)
+
+
+People6$`External Recruiting` = as.factor(People6$`External Recruiting`)
+People6$Career.Fair.Recruiting = as.factor(People6$Career.Fair.Recruiting)
+People6$`Hiring Site` = as.factor(People6$`Hiring Site`)
+
+People6$School.Type = as.factor(People6$School.Type)
+People6$Citizen = as.factor(People6$Citizen)
+People6$Accredited = as.factor(People6$Accredited)
+People6$The.Recruiter = as.factor(People6$The.Recruiter)
+
+
+
+
+
+```
+
+
+
+
+```{r}
+numeric_features <- names(People6)[sapply(People6, is.numeric)]
+
+corr_numtran <- cor(People6 %>% 
+                      select(one_of(numeric_features, "Test.Score")), 
+                    method = "pearson", 
+                    use = "pairwise.complete.obs")
+
+
+corrplot(corr_numtran, method = "color", order="hclust")
+
+
+
+
+ordinal_features = names(People6)[sapply(People6,is.ordered)]
+
+
+corr_ordtran <- cor(data.matrix(People6 %>% 
+                                  select(one_of(ordinal_features))), 
+                    method = "kendall", 
+                    use = "pairwise.complete.obs")
+
+corrplot(corr_ordtran, method = "color", order="hclust")
+
+
+
+```
+
+
+```{r}
+
+People6$`Learning Aptitude` = as.numeric(People6$`Learning Aptitude`)
+People6$`Motivation` = as.numeric(People6$`Motivation`)
+People6$Train.RatingN = as.numeric(People6$Train.RatingN)
+
+
+```
+
+
+
+```{r}
+
+set.seed(321)
+trainIdx <- createDataPartition(People6$Test.Score, 
+                                p = .8,
+                                list = FALSE,
+                                times = 1)
+subTrain <- People6[trainIdx,]
+subTest <- People6[-trainIdx,]
+print(head(subTrain))
+
+
+```
+
+
+```{r}
+set.seed(456)
+fitCtrl <- trainControl(method = "repeatedcv",
+                        number = 5,
+                        repeats = 3,
+                        verboseIter = FALSE,
+                        summaryFunction = defaultSummary)
+
+```
+
+```{r}
+
+lmFit <- train(Test.Score ~., data = subTrain,
+               method = "lm")
+
+
+```
+
+
+```{r}
+lmImp <- varImp(lmFit, scale = FALSE)
+
+summary(lmFit)
+
+
+```
+
+
+
+```{r}
+plot(lmImp, top = 20)
+
+
+```
+
+```{r}
+mean(lmFit$resample$RMSE)
+
+
+```
+
+```{r}
+
+predicted <- predict(lmFit, subTest)
+RMSE(pred = predicted, obs = subTest$Test.Score)
+
+
+```
+
+```{r}
+
+enetGrid <- expand.grid(alpha = seq(0, 2, .1 ),
+                        lambda = seq(0, .6, .01 ))
+
+set.seed(1234)  # for reproducibility
+enetFit <- train(Test.Score ~ .,
+                 data = subTrain,
+                 method="glmnet",
+                 metric="RMSE",
+                 trControl=fitCtrl,
+                 tuneGrid=enetGrid)
+print(enetFit$bestTune)
+
+
+```
+
+
+
+```{r}
+
+plot(enetFit, plotType = "level")
+
+
+```
+
+
+```{r}
+enetVarImp <- varImp(enetFit, scale = FALSE)
+
+plot(enetVarImp, top = 20)
+```
+
+
+
+
+```{r}
+
+mean(enetFit$resample$RMSE)
+
+
+```
+
+```{r}
+predicted <- predict(enetFit, subTest)
+RMSE(pred = predicted, obs = subTest$Test.Score)
+
+```
+
+```{r}
+
+subTest$predicted <- predict(enetFit, subTest)
+ggplot(subTest, aes(x = Test.Score, y = predicted)) + geom_point()
+
+
+```
+```{r}
+
+
+
+
+fitCtrl <- trainControl(method = "cv",
+                        number = 5,
+                        verboseIter = TRUE,
+                        summaryFunction=defaultSummary)
+
+
+
+
+
+```
+
+
+```{r}
+
+rf_Grid <- expand.grid(mtry = c(1, 10, 20, 50))
+
+```
+
+```{r}
+
+RandomFit <- train(Test.Score ~ .,                      
+                data = subTrain, 
+                method = "rf",
+                trControl = fitCtrl,
+                tuneGrid= rf_Grid,
+                metric='RMSE',
+                importance = TRUE,
+                maximize=FALSE)
+
+
+```
+
+
+```{r}
+
+RandomFit$bestTune
+
+```
+
+
+```{r}
+
+plot(RandomFit)
+
+mean(RandomFit$resample$RMSE)
+
+```
+
+
+```{r}
+
+predicted <- predict(RandomFit, subTest)
+RMSE(pred = predicted, obs = subTest$Test.Score)
+
+
+```
+
+```{r}
+
+
+RandomFitVarImp <- varImp(RandomFit, scale = FALSE)
+
+plot(RandomFitVarImp, top = 20)
+
+
+
+
+```
+
+```{r}
+
+subTest$predicted <- predict(RandomFit, subTest)
+ggplot(subTest, aes(x = Test.Score, y = predicted)) + geom_point()
+
+
+```
+
